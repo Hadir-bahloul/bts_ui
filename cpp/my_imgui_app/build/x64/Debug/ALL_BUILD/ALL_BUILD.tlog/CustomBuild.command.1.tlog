@@ -1,0 +1,10 @@
+^G:\ACER\DESKTOP\PRIMATEC_PFE\CPP\MY_IMGUI_APP\CMAKELISTS.TXT
+setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -SG:/acer/Desktop/PRIMATEC_PFE/cpp/my_imgui_app -BG:/acer/Desktop/PRIMATEC_PFE/cpp/my_imgui_app/build --check-stamp-file G:/acer/Desktop/PRIMATEC_PFE/cpp/my_imgui_app/build/CMakeFiles/generate.stamp
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
