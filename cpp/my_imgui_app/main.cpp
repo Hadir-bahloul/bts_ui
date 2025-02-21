@@ -13,7 +13,7 @@ int main() {
     }
 
     // Create a GLFW window
-    GLFWwindow* window = glfwCreateWindow(1280, 720, "Dagger UI", nullptr, nullptr);
+    GLFWwindow* window = glfwCreateWindow(1280, 720, "UI", nullptr, nullptr);
     if (!window) {
         std::cerr << "Failed to create GLFW window\n";
         glfwTerminate();
@@ -45,7 +45,7 @@ int main() {
         ImGui::NewFrame();
 
         // Your UI code starts here
-        ImGui::Begin("Dagger UI");
+        ImGui::Begin("BTS_Revo");
 
         // Constants for better readability
         const int NUM_DAGGERS = 6;
@@ -72,119 +72,122 @@ int main() {
             "Voltage Measurement", "Current Measurement (Low Current)", "PWM Measurement"
         };
 
-        ImGui::Text("Base Functions:");
-        for (const auto& func : base_functions) {
-            if (ImGui::Button(func)) {
-                // Implement function behavior here
-            }
-        }
+        // Split the window into two columns
+        ImGui::Columns(2, "MainColumns", true);
 
-        // Blitz buttons
-        for (int blitzIndex = 0; blitzIndex < NUM_BLITZES; blitzIndex++) {
-            if (ImGui::Button(("BLITZ" + std::to_string(blitzIndex + 1)).c_str(), ImVec2(100, 30))) {
-                isBlitzPressed[blitzIndex] = !isBlitzPressed[blitzIndex]; // Toggle state
+        // Left column: Buttons and controls
+        ImGui::BeginChild("LeftColumn", ImVec2(0, 0), true);
+        {
+            // Blitz buttons
+            for (int blitzIndex = 0; blitzIndex < NUM_BLITZES; blitzIndex++) {
+                if (ImGui::Button(("BLITZ" + std::to_string(blitzIndex + 1)).c_str(), ImVec2(100, 30))) {
+                    isBlitzPressed[blitzIndex] = !isBlitzPressed[blitzIndex]; // Toggle state
+                }
+
+                // Change color if Blitz is pressed
+                if (isBlitzPressed[blitzIndex]) {
+                    for (int i = blitzIndex * CHANNELS_PER_BLITZ; i < (blitzIndex + 1) * CHANNELS_PER_BLITZ; i++) {
+                        buttonColors[i] = true;
+                    }
+                }
+
+                ImGui::SameLine();
             }
 
-            // Change color if Blitz is pressed
-            if (isBlitzPressed[blitzIndex]) {
-                for (int i = blitzIndex * CHANNELS_PER_BLITZ; i < (blitzIndex + 1) * CHANNELS_PER_BLITZ; i++) {
-                    buttonColors[i] = true;
+            ImGui::NewLine();
+
+            // Dagger buttons
+            for (int daggerIndex = 0; daggerIndex < NUM_DAGGERS; daggerIndex++) {
+                if (ImGui::Button(("DAGGER" + std::to_string(daggerIndex + 1)).c_str(), ImVec2(100, 30))) {
+                    isDaggerPressed[daggerIndex] = !isDaggerPressed[daggerIndex]; // Toggle state
+                }
+
+                // Change color if Dagger is pressed
+                if (isDaggerPressed[daggerIndex]) {
+                    for (int i = daggerIndex * CHANNELS_PER_DAGGER; i < (daggerIndex + 1) * CHANNELS_PER_DAGGER; i++) {
+                        buttonColors[i] = true;
+                    }
+                }
+
+                ImGui::SameLine();
+            }
+
+            ImGui::NewLine();
+
+            // Display the 24 buttons at the bottom
+            for (int i = 0; i < TOTAL_CHANNELS; i++) {
+                if (buttonColors[i]) {
+                    ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.0f, 1.0f, 0.0f, 1.0f)); // Green color
+                }
+
+                ImGui::Button(std::to_string(i + 1).c_str(), ImVec2(50, 30));
+
+                if (buttonColors[i]) {
+                    ImGui::PopStyleColor();
+                    buttonColors[i] = false; // Reset after displaying
+                }
+
+                if (i % 8 < 7) {
+                    ImGui::SameLine();
                 }
             }
-
-            ImGui::SameLine();
         }
+        ImGui::EndChild();
 
-        ImGui::NewLine();
-
-        // Blitz functions appear when at least one Blitz is pressed
-        bool anyBlitzActive = false;
-        for (int i = 0; i < NUM_BLITZES; i++) {
-            if (isBlitzPressed[i]) {
-                anyBlitzActive = true;
-                break;
-            }
-        }
-
-        if (anyBlitzActive) {
-            ImGui::Text("Blitz Functions:");
-            for (const auto& func : blitz_functions) {
+        // Right column: Functions
+        ImGui::NextColumn();
+        ImGui::BeginChild("RightColumn", ImVec2(0, 0), true);
+        {
+            ImGui::Text("Base Functions:");
+            for (const auto& func : base_functions) {
                 if (ImGui::Button(func)) {
                     // Implement function behavior here
                 }
             }
-        }
 
-        // Display Blitz-controlled channels
-        for (int blitzIndex = 0; blitzIndex < NUM_BLITZES; blitzIndex++) {
-            if (isBlitzPressed[blitzIndex]) {
-                ImGui::Text("Channels controlled by Blitz %d:", blitzIndex + 1);
-                for (int i = blitzIndex * CHANNELS_PER_BLITZ; i < (blitzIndex + 1) * CHANNELS_PER_BLITZ; i++) {
-                    ImGui::Text("- Channel %d", i + 1);
+            // Blitz functions appear when at least one Blitz is pressed
+            bool anyBlitzActive = false;
+            for (int i = 0; i < NUM_BLITZES; i++) {
+                if (isBlitzPressed[i]) {
+                    anyBlitzActive = true;
+                    break;
                 }
+            }
+
+            if (anyBlitzActive) {
+                ImGui::Text("Blitz Functions:");
+                for (const auto& func : blitz_functions) {
+                    if (ImGui::Button(func)) {
+                        // Implement function behavior here
+                    }
+                }
+            }
+
+            // Load Simulation (Resistor) function controlled by active daggers
+            bool anyDaggerActive = false;
+            for (int i = 0; i < NUM_DAGGERS; i++) {
+                if (isDaggerPressed[i]) {
+                    anyDaggerActive = true;
+                    break;
+                }
+            }
+
+            if (anyDaggerActive) {
                 ImGui::NewLine();
-            }
-        }
-
-        // Dagger buttons
-        for (int daggerIndex = 0; daggerIndex < NUM_DAGGERS; daggerIndex++) {
-            if (ImGui::Button(("DAGGER" + std::to_string(daggerIndex + 1)).c_str(), ImVec2(100, 30))) {
-                isDaggerPressed[daggerIndex] = !isDaggerPressed[daggerIndex]; // Toggle state
-            }
-
-            // Change color if Dagger is pressed
-            if (isDaggerPressed[daggerIndex]) {
-                for (int i = daggerIndex * CHANNELS_PER_DAGGER; i < (daggerIndex + 1) * CHANNELS_PER_DAGGER; i++) {
-                    buttonColors[i] = true;
+                if (ImGui::Button("Load Simulation (Resistor)")) {
+                    // Implement the behavior for Load Simulation (Resistor) here
                 }
-            }
 
-            ImGui::SameLine();
-        }
-
-        ImGui::NewLine();
-
-        // Display the 24 buttons at the bottom
-        for (int i = 0; i < TOTAL_CHANNELS; i++) {
-            if (buttonColors[i]) {
-                ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.0f, 1.0f, 0.0f, 1.0f)); // Green color
-            }
-
-            ImGui::Button(std::to_string(i + 1).c_str(), ImVec2(50, 30));
-
-            if (buttonColors[i]) {
-                ImGui::PopStyleColor();
-                buttonColors[i] = false; // Reset after displaying
-            }
-
-            if (i % 8 < 7) {
-                ImGui::SameLine();
-            }
-        }
-
-        // Load Simulation (Resistor) function controlled by active daggers
-        bool anyDaggerActive = false;
-        for (int i = 0; i < NUM_DAGGERS; i++) {
-            if (isDaggerPressed[i]) {
-                anyDaggerActive = true;
-                break;
-            }
-        }
-
-        if (anyDaggerActive) {
-            ImGui::NewLine();
-            if (ImGui::Button("Load Simulation (Resistor)")) {
-                // Implement the behavior for Load Simulation (Resistor) here
-            }
-
-            // Display channels controlled by active daggers
-            ImGui::Text("Channels Controlled by Active Daggers:");
-            for (int daggerIndex = 0; daggerIndex < NUM_DAGGERS; daggerIndex++) {
-                if (isDaggerPressed[daggerIndex]) {
-                    ImGui::Text("- DAGGER %d controls channels %d to %d", daggerIndex + 1, daggerIndex * CHANNELS_PER_DAGGER + 1, (daggerIndex + 1) * CHANNELS_PER_DAGGER);
+                // Display channels controlled by active daggers
+                ImGui::Text("Channels Controlled by Active Daggers:");
+                for (int daggerIndex = 0; daggerIndex < NUM_DAGGERS; daggerIndex++) {
+                    if (isDaggerPressed[daggerIndex]) {
+                        ImGui::Text("- DAGGER %d controls channels %d to %d", daggerIndex + 1, daggerIndex * CHANNELS_PER_DAGGER + 1, (daggerIndex + 1) * CHANNELS_PER_DAGGER);
+                    }
                 }
             }
         }
+        ImGui::EndChild();
 
         ImGui::End();
 
