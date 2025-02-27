@@ -8,6 +8,9 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 # Path to the extracted GLFW folder (use forward slashes)
 set(GLFW_DIR "G:/acer/Desktop/PRIMATEC_PFE/cpp/my_imgui_app/glfw-3.4.bin.WIN64")
 
+
+
+
 # Add GLFW include directory
 include_directories(${GLFW_DIR}/include)
 
