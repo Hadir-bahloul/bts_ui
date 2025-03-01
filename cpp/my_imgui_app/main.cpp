@@ -7,22 +7,6 @@
 #include <vector>
 #include <cstdlib> // For rand()
 
-// Platform-specific includes
-#ifdef _WIN32
-#include <windows.h>
-#include <shobjidl.h> // For IFileDialog
-#endif
-
-#ifdef __linux__
-#include <gtk/gtk.h>
-#endif
-
-// Function to simulate device discovery
-int DiscoverBTSRevoDevices() {
-    // Simulate discovery by returning a random number between 1 and 4
-    return rand() % 4 + 6;
-}
-
 // Struct to hold measurement data for each channel
 struct ChannelMeasurement {
     float voltage = 0.0f;
@@ -38,9 +22,17 @@ struct BTSRevoDevice {
     bool isBlitzPressed[3] = { false };
     bool buttonColors[24] = { false };
     ChannelMeasurement channelMeasurements[24]; // Each device has its own channel measurements
+    std::string script; // Script for this device
+    char scriptBuffer[1024] = {0}; // Buffer for script input
 
     BTSRevoDevice(int index) : deviceIndex(index) {}
 };
+
+// Function to simulate device discovery
+int DiscoverBTSRevoDevices() {
+    // Simulate discovery by returning a random number between 1 and 4
+    return rand() % 4 + 3;
+}
 
 // Function to render a measurement window for a channel
 void RenderChannelMeasurementWindow(ChannelMeasurement& measurement, int channelNumber, int deviceIndex) {
@@ -93,13 +85,54 @@ void RenderChannelMeasurementWindow(ChannelMeasurement& measurement, int channel
     ImGui::End();
 }
 
+// Function to set light theme colors
+void SetLightTheme() {
+    ImGuiStyle& style = ImGui::GetStyle();
+    style.Colors[ImGuiCol_Text] = ImVec4(0.10f, 0.10f, 0.10f, 1.00f); // Dark gray text
+    style.Colors[ImGuiCol_WindowBg] = ImVec4(0.96f, 0.96f, 0.96f, 1.00f); // Light gray background
+    style.Colors[ImGuiCol_ChildBg] = ImVec4(0.98f, 0.98f, 0.98f, 1.00f); // Slightly lighter gray for child windows
+    style.Colors[ImGuiCol_Border] = ImVec4(0.80f, 0.80f, 0.80f, 0.50f); // Light gray border
+    style.Colors[ImGuiCol_FrameBg] = ImVec4(1.00f, 1.00f, 1.00f, 1.00f); // White for input fields
+    style.Colors[ImGuiCol_FrameBgHovered] = ImVec4(0.90f, 0.90f, 0.90f, 1.00f); // Light gray for hover
+    style.Colors[ImGuiCol_FrameBgActive] = ImVec4(0.80f, 0.80f, 0.80f, 1.00f); // Slightly darker gray for active
+    style.Colors[ImGuiCol_TitleBg] = ImVec4(0.92f, 0.92f, 0.92f, 1.00f); // Light gray for title bar
+    style.Colors[ImGuiCol_TitleBgActive] = ImVec4(0.88f, 0.88f, 0.88f, 1.00f); // Slightly darker gray for active title
+    style.Colors[ImGuiCol_Button] = ImVec4(0.26f, 0.59f, 0.98f, 1.00f); // Blue buttons
+    style.Colors[ImGuiCol_ButtonHovered] = ImVec4(0.20f, 0.49f, 0.86f, 1.00f); // Darker blue for hover
+    style.Colors[ImGuiCol_ButtonActive] = ImVec4(0.16f, 0.39f, 0.78f, 1.00f); // Even darker blue for active
+    style.Colors[ImGuiCol_Header] = ImVec4(0.26f, 0.59f, 0.98f, 1.00f); // Blue headers
+    style.Colors[ImGuiCol_HeaderHovered] = ImVec4(0.20f, 0.49f, 0.86f, 1.00f); // Darker blue for hover
+    style.Colors[ImGuiCol_HeaderActive] = ImVec4(0.16f, 0.39f, 0.78f, 1.00f); // Even darker blue for active
+    style.Colors[ImGuiCol_Separator] = ImVec4(0.60f, 0.60f, 0.60f, 1.00f); // Medium gray for separators
+}
+
+// Function to set dark theme colors
+void SetDarkTheme() {
+    ImGuiStyle& style = ImGui::GetStyle();
+    style.Colors[ImGuiCol_Text] = ImVec4(0.95f, 0.95f, 0.95f, 1.00f); // White text
+    style.Colors[ImGuiCol_WindowBg] = ImVec4(0.12f, 0.12f, 0.12f, 1.00f); // Dark gray background
+    style.Colors[ImGuiCol_ChildBg] = ImVec4(0.15f, 0.15f, 0.15f, 1.00f); // Slightly lighter gray for child windows
+    style.Colors[ImGuiCol_Border] = ImVec4(0.25f, 0.25f, 0.25f, 0.50f); // Medium gray border
+    style.Colors[ImGuiCol_FrameBg] = ImVec4(0.20f, 0.20f, 0.20f, 1.00f); // Dark gray for input fields
+    style.Colors[ImGuiCol_FrameBgHovered] = ImVec4(0.25f, 0.25f, 0.25f, 1.00f); // Lighter gray for hover
+    style.Colors[ImGuiCol_FrameBgActive] = ImVec4(0.30f, 0.30f, 0.30f, 1.00f); // Slightly lighter gray for active
+    style.Colors[ImGuiCol_TitleBg] = ImVec4(0.10f, 0.10f, 0.10f, 1.00f); // Dark gray for title bar
+    style.Colors[ImGuiCol_TitleBgActive] = ImVec4(0.15f, 0.15f, 0.15f, 1.00f); // Slightly lighter gray for active title
+    style.Colors[ImGuiCol_Button] = ImVec4(0.26f, 0.59f, 0.98f, 1.00f); // Blue buttons
+    style.Colors[ImGuiCol_ButtonHovered] = ImVec4(0.20f, 0.49f, 0.86f, 1.00f); // Darker blue for hover
+    style.Colors[ImGuiCol_ButtonActive] = ImVec4(0.16f, 0.39f, 0.78f, 1.00f); // Even darker blue for active
+    style.Colors[ImGuiCol_Header] = ImVec4(0.26f, 0.59f, 0.98f, 1.00f); // Blue headers
+    style.Colors[ImGuiCol_HeaderHovered] = ImVec4(0.20f, 0.49f, 0.86f, 1.00f); // Darker blue for hover
+    style.Colors[ImGuiCol_HeaderActive] = ImVec4(0.16f, 0.39f, 0.78f, 1.00f); // Even darker blue for active
+    style.Colors[ImGuiCol_Separator] = ImVec4(0.40f, 0.40f, 0.40f, 1.00f); // Medium gray for separators
+}
+
 // Function to render the control interface for a BTS_Revo device
-void RenderBTSRevoControl(BTSRevoDevice& device) {
+void RenderBTSRevoControl(BTSRevoDevice& device, std::vector<BTSRevoDevice>& devices, bool& isDarkTheme) {
     // Constants for better readability
     const int NUM_DAGGERS = 6;
     const int NUM_BLITZES = 3;
     const int CHANNELS_PER_BLITZ = 8;
-    const int CHANNELS_PER_DAGGER = 4;
     const int TOTAL_CHANNELS = 24;
 
     // Blitz functions
@@ -122,11 +155,84 @@ void RenderBTSRevoControl(BTSRevoDevice& device) {
     // Left column: Buttons and controls
     ImGui::BeginChild("LeftColumn", ImVec2(0, 0), true);
     {
-        // Blitz buttons
+        // Render Dagger buttons in pairs, with Blitz centered between them
+        ImGui::Text("Daggers:");
         for (int blitzIndex = 0; blitzIndex < NUM_BLITZES; blitzIndex++) {
-            if (ImGui::Button(("BLITZ" + std::to_string(blitzIndex + 1)).c_str(), ImVec2(100, 30))) {
+            // Calculate the horizontal offset to center the Dagger pair above the Blitz
+            float offsetX = static_cast<float>(blitzIndex * CHANNELS_PER_BLITZ * 45) + (CHANNELS_PER_BLITZ * 40 / 3) - 90; // Adjusted for Dagger pair width
+            ImGui::SetCursorPosX(ImGui::GetCursorPosX() + offsetX);
+
+            // First Dagger in the pair
+            int daggerIndex = blitzIndex * 2; // Daggers start at 0
+            ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(1.0f, 0.44f, 0.38f, 1.0f)); // Professional pink (#FF6F61)
+            if (ImGui::Button(("DAGGER " + std::to_string(daggerIndex + 1)).c_str(), ImVec2(80, 30))) {
+                device.isDaggerPressed[daggerIndex] = !device.isDaggerPressed[daggerIndex]; // Toggle state
+            }
+            ImGui::PopStyleColor();
+
+            // Change color if Dagger is pressed
+            if (device.isDaggerPressed[daggerIndex]) {
+                for (int i = daggerIndex * 4; i < (daggerIndex + 1) * 4; i++) {
+                    device.buttonColors[i] = true;
+                }
+            }
+
+            ImGui::SameLine(0, 5); // Reduce spacing between Dagger buttons to 5 pixels
+
+            // Second Dagger in the pair
+            ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(1.0f, 0.44f, 0.38f, 1.0f)); // Professional pink (#FF6F61)
+            if (ImGui::Button(("DAGGER " + std::to_string(daggerIndex + 2)).c_str(), ImVec2(80, 30))) {
+                device.isDaggerPressed[daggerIndex + 1] = !device.isDaggerPressed[daggerIndex + 1]; // Toggle state
+            }
+            ImGui::PopStyleColor();
+
+            // Change color if Dagger is pressed
+            if (device.isDaggerPressed[daggerIndex + 1]) {
+                for (int i = (daggerIndex + 1) * 4; i < (daggerIndex + 2) * 4; i++) {
+                    device.buttonColors[i] = true;
+                }
+            }
+
+            // Add a vertical bar separator between Dagger pairs
+            if (blitzIndex < NUM_BLITZES - 1) {
+                ImGui::NewLine();
+            }
+        }
+
+        ImGui::NewLine();
+        ImGui::Separator(); // Add a separator between Daggers and Blitzes
+
+        // Add a rectangle with "BTS_Révo" text
+        ImVec2 rectSize = ImVec2(ImGui::GetContentRegionAvail().x, 50); // Rectangle size
+        ImVec2 rectPos = ImGui::GetCursorScreenPos(); // Position of the rectangle
+        ImDrawList* drawList = ImGui::GetWindowDrawList(); // Get the draw list
+
+        // Draw the rectangle
+        drawList->AddRectFilled(rectPos, ImVec2(rectPos.x + rectSize.x, rectPos.y + rectSize.y), IM_COL32(46, 46, 46, 255)); // Dark gray background (#2E2E2E)
+        drawList->AddRect(rectPos, ImVec2(rectPos.x + rectSize.x, rectPos.y + rectSize.y), IM_COL32(74, 74, 74, 255)); // Light gray border (#4A4A4A)
+
+        // Add text "BTS_Révo" in the center of the rectangle
+        ImVec2 textSize = ImGui::CalcTextSize("BTS_Révo");
+        ImVec2 textPos = ImVec2(rectPos.x + (rectSize.x - textSize.x) / 2, rectPos.y + (rectSize.y - textSize.y) / 2);
+        drawList->AddText(textPos, IM_COL32(255, 255, 255, 255), "BTS_Révo"); // White text (#FFFFFF)
+
+        // Move cursor down after the rectangle
+        ImGui::SetCursorPosY(ImGui::GetCursorPosY() + rectSize.y + 10);
+
+        ImGui::Separator(); // Add a separator between the rectangle and Blitzes
+
+        // Render Blitz buttons, each centered between its corresponding Dagger pair
+        ImGui::Text("Blitzes:");
+        for (int blitzIndex = 0; blitzIndex < NUM_BLITZES; blitzIndex++) {
+            // Calculate the horizontal offset to center the Blitz button between the Dagger pair
+            float offsetX = static_cast<float>(blitzIndex * CHANNELS_PER_BLITZ * 40) + (CHANNELS_PER_BLITZ * 40 / 2) - 50; // Adjust based on button width (100)
+            ImGui::SetCursorPosX(ImGui::GetCursorPosX() + offsetX);
+
+            ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.42f, 0.36f, 0.58f, 1.0f)); // Professional blue (#6B5B95)
+            if (ImGui::Button(("BLITZ " + std::to_string(blitzIndex + 1)).c_str(), ImVec2(100, 30))) {
                 device.isBlitzPressed[blitzIndex] = !device.isBlitzPressed[blitzIndex]; // Toggle state
             }
+            ImGui::PopStyleColor();
 
             // Change color if Blitz is pressed
             if (device.isBlitzPressed[blitzIndex]) {
@@ -134,48 +240,52 @@ void RenderBTSRevoControl(BTSRevoDevice& device) {
                     device.buttonColors[i] = true;
                 }
             }
-
-            ImGui::SameLine();
         }
 
         ImGui::NewLine();
+        ImGui::Separator(); // Add a separator between Blitzes and Channels
 
-        // Dagger buttons
-        for (int daggerIndex = 0; daggerIndex < NUM_DAGGERS; daggerIndex++) {
-            if (ImGui::Button(("DAGGER" + std::to_string(daggerIndex + 1)).c_str(), ImVec2(100, 30))) {
-                device.isDaggerPressed[daggerIndex] = !device.isDaggerPressed[daggerIndex]; // Toggle state
-            }
+        // Render channels, each group of 8 under its corresponding Blitz
+        ImGui::Text("Channels:");
+        for (int blitzIndex = 0; blitzIndex < NUM_BLITZES; blitzIndex++) {
+            // Position the channels under their corresponding Blitz button
+            for (int i = blitzIndex * CHANNELS_PER_BLITZ; i < (blitzIndex + 1) * CHANNELS_PER_BLITZ; i++) {
+                if (device.buttonColors[i]) {
+                    ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.0f, 1.0f, 0.0f, 1.0f)); // Green color for active channels
+                }
 
-            // Change color if Dagger is pressed
-            if (device.isDaggerPressed[daggerIndex]) {
-                for (int i = daggerIndex * CHANNELS_PER_DAGGER; i < (daggerIndex + 1) * CHANNELS_PER_DAGGER; i++) {
-                    device.buttonColors[i] = true;
+                if (ImGui::Button(std::to_string(i + 1).c_str(), ImVec2(30, 30))) {
+                    device.channelMeasurements[i].isWindowOpen = true; // Open the measurement window for this device's channel
+                }
+
+                if (device.buttonColors[i]) {
+                    ImGui::PopStyleColor();
+                    device.buttonColors[i] = false; // Reset after displaying
+                }
+
+                if (i < (blitzIndex + 1) * CHANNELS_PER_BLITZ - 1) {
+                    ImGui::SameLine();
                 }
             }
 
-            ImGui::SameLine();
-        }
-
-        ImGui::NewLine();
-
-        // Display the 24 buttons at the bottom
-        for (int i = 0; i < TOTAL_CHANNELS; i++) {
-            if (device.buttonColors[i]) {
-                ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.0f, 1.0f, 0.0f, 1.0f)); // Green color
-            }
-
-            if (ImGui::Button(std::to_string(i + 1).c_str(), ImVec2(50, 30))) {
-                device.channelMeasurements[i].isWindowOpen = true; // Open the measurement window for this device's channel
-            }
-
-            if (device.buttonColors[i]) {
-                ImGui::PopStyleColor();
-                device.buttonColors[i] = false; // Reset after displaying
-            }
-
-            if (i % 8 < 7) {
+            // Add a vertical bar separator between channel groups
+            if (blitzIndex < NUM_BLITZES - 1) {
+                ImGui::SameLine();
+                ImGui::Text("|");
                 ImGui::SameLine();
             }
+        }
+
+        // Device script section (moved under the channels)
+        ImGui::NewLine();
+        ImGui::Separator();
+        ImGui::Text("Device Script:");
+        if (ImGui::InputTextMultiline(("##DeviceScript" + std::to_string(device.deviceIndex)).c_str(), device.scriptBuffer, IM_ARRAYSIZE(device.scriptBuffer), ImVec2(-1, 100))) {
+            device.script = std::string(device.scriptBuffer); // Update the script string
+        }
+        if (ImGui::Button("Run Device Script")) {
+            // Implement script execution for this device
+            std::cout << "Running script for Device " << device.deviceIndex << ":\n" << device.script << "\n";
         }
     }
     ImGui::EndChild();
@@ -236,8 +346,25 @@ void RenderBTSRevoControl(BTSRevoDevice& device) {
             ImGui::Text("Channels Controlled by Active Daggers:");
             for (int daggerIndex = 0; daggerIndex < NUM_DAGGERS; daggerIndex++) {
                 if (device.isDaggerPressed[daggerIndex]) {
-                    ImGui::Text("- DAGGER %d controls channels %d to %d", daggerIndex + 1, daggerIndex * CHANNELS_PER_DAGGER + 1, (daggerIndex + 1) * CHANNELS_PER_DAGGER);
+                    ImGui::Text("- DAGGER %d controls channels %d to %d", daggerIndex + 1, daggerIndex * 4 + 1, (daggerIndex + 1) * 4);
                 }
+            }
+        }
+
+        // New script zone for applying to all devices
+        ImGui::NewLine();
+        ImGui::Separator();
+        ImGui::Text("Apply to All Devices:");
+        static char applyToAllScriptBuffer[1024] = {0};
+        if (ImGui::InputTextMultiline("##ApplyToAllScript", applyToAllScriptBuffer, IM_ARRAYSIZE(applyToAllScriptBuffer), ImVec2(-1, 100))) {
+            // Update the apply-to-all script string
+        }
+        if (ImGui::Button("Apply to All Devices")) {
+            // Implement script execution for all devices
+            std::string applyToAllScript = std::string(applyToAllScriptBuffer);
+            std::cout << "Applying script to all devices:\n" << applyToAllScript << "\n";
+            for (auto& device : devices) {
+                device.script += "\n" + applyToAllScript; // Append the script to each device's script
             }
         }
     }
@@ -249,57 +376,6 @@ void RenderBTSRevoControl(BTSRevoDevice& device) {
             RenderChannelMeasurementWindow(device.channelMeasurements[i], i + 1, device.deviceIndex);
         }
     }
-}
-
-// Function to open a directory dialog (platform-specific)
-std::string OpenDirectoryDialog() {
-    std::string selectedDir;
-
-#ifdef _WIN32
-    // Windows: Use IFileDialog
-    IFileDialog* pFileDialog = nullptr;
-    if (SUCCEEDED(CoCreateInstance(CLSID_FileOpenDialog, nullptr, CLSCTX_INPROC_SERVER, IID_PPV_ARGS(&pFileDialog)))) {
-        DWORD options;
-        pFileDialog->GetOptions(&options);
-        pFileDialog->SetOptions(options | FOS_PICKFOLDERS);
-
-        if (SUCCEEDED(pFileDialog->Show(nullptr))) {
-            IShellItem* pItem;
-            if (SUCCEEDED(pFileDialog->GetResult(&pItem))) {
-                PWSTR pszFilePath;
-                if (SUCCEEDED(pItem->GetDisplayName(SIGDN_FILESYSPATH, &pszFilePath))) {
-                    char buffer[MAX_PATH];
-                    WideCharToMultiByte(CP_UTF8, 0, pszFilePath, -1, buffer, MAX_PATH, nullptr, nullptr);
-                    selectedDir = buffer;
-                    CoTaskMemFree(pszFilePath);
-                }
-                pItem->Release();
-            }
-        }
-        pFileDialog->Release();
-    }
-#endif
-
-#ifdef __linux__
-    // Linux: Use GTK
-    gtk_init(nullptr, nullptr);
-    GtkWidget* dialog = gtk_file_chooser_dialog_new(
-        "Select Directory",
-        nullptr,
-        GTK_FILE_CHOOSER_ACTION_SELECT_FOLDER,
-        "Cancel", GTK_RESPONSE_CANCEL,
-        "Select", GTK_RESPONSE_ACCEPT,
-        nullptr);
-
-    if (gtk_dialog_run(GTK_DIALOG(dialog)) == GTK_RESPONSE_ACCEPT) {
-        char* folder = gtk_file_chooser_get_filename(GTK_FILE_CHOOSER(dialog));
-        selectedDir = folder;
-        g_free(folder);
-    }
-    gtk_widget_destroy(dialog);
-#endif
-
-    return selectedDir;
 }
 
 int main() {
@@ -324,8 +400,9 @@ int main() {
     ImGui::CreateContext();
     ImGuiIO& io = ImGui::GetIO(); (void)io;
 
-    // Setup Dear ImGui style
-    ImGui::StyleColorsDark();
+    // Setup Dear ImGui style (default to dark theme)
+    bool isDarkTheme = true;
+    SetDarkTheme();
 
     // Setup Platform/Renderer backends
     ImGui_ImplGlfw_InitForOpenGL(window, true);
@@ -338,15 +415,7 @@ int main() {
     // List to keep track of BTS_Revo devices
     std::vector<BTSRevoDevice> devices;
 
-    // Log file path
-    char logFilePathBuffer[256] = ""; // Buffer for the log file path
-    std::string logFilePath; // To store the final log file path
-
-    // Script execution
-    char scriptBuffer[1024] = ""; // Buffer for the script
-    bool showScriptWindow = false;
-
-    // Selected device index
+    // Track the currently selected device
     static int selectedDeviceIndex = 0;
 
     // Main loop
@@ -364,7 +433,7 @@ int main() {
         ImGui::SetNextWindowSize(ImVec2(io.DisplaySize.x, io.DisplaySize.y));
         ImGui::Begin("Main Window", nullptr, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove);
 
-        // Left panel: Device list
+        // Left panel: Device list and theme toggle
         ImGui::BeginChild("Left Panel", ImVec2(200, 0), true);
         {
             if (discoveryPhase) {
@@ -384,6 +453,18 @@ int main() {
                     }
                 }
             }
+
+            // Theme toggle button
+            ImGui::NewLine();
+            ImGui::Separator();
+            if (ImGui::Button(isDarkTheme ? "Switch to Light Theme" : "Switch to Dark Theme")) {
+                isDarkTheme = !isDarkTheme; // Toggle theme
+                if (isDarkTheme) {
+                    SetDarkTheme();
+                } else {
+                    SetLightTheme();
+                }
+            }
         }
         ImGui::EndChild();
 
@@ -393,19 +474,29 @@ int main() {
         {
             if (!discoveryPhase) {
                 if (selectedDeviceIndex >= 0 && selectedDeviceIndex < devices.size()) {
-                    RenderBTSRevoControl(devices[selectedDeviceIndex]);
+                    RenderBTSRevoControl(devices[selectedDeviceIndex], devices, isDarkTheme);
                 }
             }
         }
         ImGui::EndChild();
 
-        // Bottom panel: Script editor and execution
-        ImGui::BeginChild("Bottom Panel", ImVec2(0, 0), true);
+        // Right panel: Apply-to-all script
+        ImGui::SameLine();
+        ImGui::BeginChild("Right Panel", ImVec2(200, 0), true);
         {
-            ImGui::InputTextMultiline("Script", scriptBuffer, IM_ARRAYSIZE(scriptBuffer), ImVec2(-1, 100));
-            if (ImGui::Button("Run Script on All Devices")) {
-                // Implement script execution logic here
-                std::cout << "Executing script on all devices:\n" << scriptBuffer << std::endl;
+            // New script zone for applying to all devices
+            ImGui::Text("Apply to All Devices:");
+            static char applyToAllScriptBuffer[1024] = {0};
+            if (ImGui::InputTextMultiline("##ApplyToAllScript", applyToAllScriptBuffer, IM_ARRAYSIZE(applyToAllScriptBuffer), ImVec2(-1, 100))) {
+                // Update the apply-to-all script string
+            }
+            if (ImGui::Button("Apply to All Devices")) {
+                // Implement script execution for all devices
+                std::string applyToAllScript = std::string(applyToAllScriptBuffer);
+                std::cout << "Applying script to all devices:\n" << applyToAllScript << "\n";
+                for (auto& device : devices) {
+                    device.script += "\n" + applyToAllScript; // Append the script to each device's script
+                }
             }
         }
         ImGui::EndChild();
